@@ -1,15 +1,9 @@
 package cutscenes;
 
-import tjson.TJSON as Json;
+import haxe.Json;
 import openfl.utils.Assets;
 
-#if sys
-import sys.FileSystem;
-import sys.io.File;
-#end
-
 import objects.TypedAlphabet;
-
 import cutscenes.DialogueCharacter;
 
 // Gonna try to kind of make it compatible to Forever Engine,
@@ -24,7 +18,7 @@ typedef DialogueLine = {
 	var text:Null<String>;
 	var boxState:Null<String>;
 	var speed:Null<Float>;
-	var sound:Null<String>;
+	@:optional var sound:Null<String>;
 }
 
 // TO DO: Clean code? Maybe? idk
@@ -58,6 +52,10 @@ class DialogueBoxPsych extends FlxSpriteGroup
 	public function new(dialogueList:DialogueFile, ?song:String = null)
 	{
 		super();
+
+		//precache sounds
+		Paths.sound('dialogue');
+		Paths.sound('dialogueClose');
 
 		if(song != null && song != '') {
 			FlxG.sound.playMusic(Paths.music(song), 0);
@@ -376,14 +374,25 @@ class DialogueBoxPsych extends FlxSpriteGroup
 		}
 	}
 
-	public static function parseDialogue(path:String):DialogueFile {
+	inline public static function parseDialogue(path:String):DialogueFile {
 		#if MODS_ALLOWED
-		if(FileSystem.exists(path))
-		{
-			return cast Json.parse(File.getContent(path));
-		}
+		return cast (FileSystem.exists(path)) ? Json.parse(File.getContent(path)) : dummy();
+		#else
+		return cast (Assets.exists(path, TEXT)) ? Json.parse(Assets.getText(path)) : dummy();
 		#end
-		return cast Json.parse(Assets.getText(path));
+	}
+
+	inline public static function dummy():DialogueFile
+	{
+		return { dialogue: [
+			{
+				expression: "talk",
+				text: "DIALOGUE NOT FOUND",
+				boxState: "normal",
+				speed: 0.05,
+				portrait: "bf"
+			}
+		]};
 	}
 
 	public static function updateBoxOffsets(box:FlxSprite) { //Had to make it static because of the editors

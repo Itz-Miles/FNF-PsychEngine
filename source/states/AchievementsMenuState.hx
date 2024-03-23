@@ -25,7 +25,7 @@ class AchievementsMenuState extends MusicBeatState
 		Paths.clearStoredMemory();
 		Paths.clearUnusedMemory();
 
-		#if desktop
+		#if DISCORD_ALLOWED
 		DiscordClient.changePresence("Achievements Menu", null);
 		#end
 
@@ -34,15 +34,11 @@ class AchievementsMenuState extends MusicBeatState
 		{
 			var unlocked:Bool = Achievements.isUnlocked(achievement);
 			if(data.hidden != true || unlocked)
-				options.push(makeAchievement(achievement, data, unlocked));
+				options.push(makeAchievement(achievement, data, unlocked, data.mod));
 		}
-
-		// TO DO: check for mods
 
 		camFollow = new FlxObject(0, 0, 1, 1);
 		add(camFollow);
-		FlxG.camera.follow(camFollow, null, 0);
-		FlxG.camera.scroll.y = -FlxG.height;
 
 		var menuBG:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menuBGBlue'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
@@ -62,6 +58,7 @@ class AchievementsMenuState extends MusicBeatState
 			var graphic = null;
 			if(option.unlocked)
 			{
+				#if MODS_ALLOWED Mods.currentModDirectory = option.mod; #end
 				var image:String = 'achievements/' + option.name;
 				if(Paths.fileExists('images/$image-pixel.png', IMAGE))
 				{
@@ -82,6 +79,7 @@ class AchievementsMenuState extends MusicBeatState
 			spr.antialiasing = hasAntialias;
 			grpOptions.add(spr);
 		}
+		#if MODS_ALLOWED Mods.loadTopMod(); #end
 
 		var box:FlxSprite = new FlxSprite(0, -30).makeGraphic(1, 1, FlxColor.BLACK);
 		box.scale.set(grpOptions.width + 60, grpOptions.height + 60);
@@ -103,11 +101,11 @@ class AchievementsMenuState extends MusicBeatState
 		nameText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, CENTER);
 		nameText.scrollFactor.set();
 
-		descText = new FlxText(50, nameText.y + 40, FlxG.width - 100, "", 24);
+		descText = new FlxText(50, nameText.y + 38, FlxG.width - 100, "", 24);
 		descText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, CENTER);
 		descText.scrollFactor.set();
 
-		progressBar = new Bar(0, descText.y + 50);
+		progressBar = new Bar(0, descText.y + 52);
 		progressBar.screenCenter(X);
 		progressBar.scrollFactor.set();
 		progressBar.enabled = false;
@@ -124,6 +122,9 @@ class AchievementsMenuState extends MusicBeatState
 		
 		_changeSelection();
 		super.create();
+		
+		FlxG.camera.follow(camFollow, null, 9);
+		FlxG.camera.scroll.y = -FlxG.height;
 	}
 
 	function makeAchievement(achievement:String, data:Achievement, unlocked:Bool, mod:String = null)
@@ -131,8 +132,8 @@ class AchievementsMenuState extends MusicBeatState
 		var unlocked:Bool = Achievements.isUnlocked(achievement);
 		return {
 			name: achievement,
-			displayName: unlocked ? data.name : '???',
-			description: data.description,
+			displayName: unlocked ? Language.getPhrase('achievement_$achievement', data.name) : '???',
+			description: Language.getPhrase('description_$achievement', data.description),
 			curProgress: data.maxScore > 0 ? Achievements.getScore(achievement) : 0,
 			maxProgress: data.maxScore > 0 ? data.maxScore : 0,
 			decProgress: data.maxScore > 0 ? data.maxDecimals : 0,
@@ -203,8 +204,6 @@ class AchievementsMenuState extends MusicBeatState
 			}
 		}
 
-		FlxG.camera.followLerp = FlxMath.bound(elapsed * 9 / (FlxG.updateFramerate / 60), 0, 1);
-
 		if (controls.BACK) {
 			FlxG.sound.play(Paths.sound('cancelMenu'));
 			MusicBeatState.switchState(new MainMenuState());
@@ -268,7 +267,7 @@ class ResetAchievementSubstate extends MusicBeatSubstate
 		add(bg);
 		FlxTween.tween(bg, {alpha: 0.6}, 0.4, {ease: FlxEase.quartInOut});
 
-		var text:Alphabet = new Alphabet(0, 180, "Reset Achievement:", true);
+		var text:Alphabet = new Alphabet(0, 180, Language.getPhrase('reset_achievement', 'Reset Achievement:'), true);
 		text.screenCenter(X);
 		text.scrollFactor.set();
 		add(text);
@@ -280,13 +279,13 @@ class ResetAchievementSubstate extends MusicBeatSubstate
 		text.borderSize = 2;
 		add(text);
 		
-		yesText = new Alphabet(0, text.y + 120, 'Yes', true);
+		yesText = new Alphabet(0, text.y + 120, Language.getPhrase('Yes'), true);
 		yesText.screenCenter(X);
 		yesText.x -= 200;
 		yesText.scrollFactor.set();
 		for(letter in yesText.letters) letter.color = FlxColor.RED;
 		add(yesText);
-		noText = new Alphabet(0, text.y + 120, 'No', true);
+		noText = new Alphabet(0, text.y + 120, Language.getPhrase('No'), true);
 		noText.screenCenter(X);
 		noText.x += 200;
 		noText.scrollFactor.set();

@@ -1,6 +1,9 @@
 package objects;
 
+import backend.animation.PsychAnimationController;
+
 import shaders.RGBPalette;
+
 import flixel.system.FlxAssets.FlxShader;
 import flixel.graphics.frames.FlxFrame;
 
@@ -23,6 +26,8 @@ class NoteSplash extends FlxSprite
 
 	public function new(x:Float = 0, y:Float = 0) {
 		super(x, y);
+
+		animation = new PsychAnimationController(this);
 
 		var skin:String = null;
 		if(PlayState.SONG.splashSkin != null && PlayState.SONG.splashSkin.length > 0) skin = PlayState.SONG.splashSkin;
@@ -153,7 +158,7 @@ class NoteSplash extends FlxSprite
 	{
 		if(configs.exists(skin)) return configs.get(skin);
 
-		var path:String = Paths.getPath('images/$skin.txt', TEXT, true);
+		var path:String = Paths.getPath('images/$skin.txt', TEXT);
 		var configFile:Array<String> = CoolUtil.coolTextFile(path);
 		if(configFile.length < 1) return null;
 		
@@ -177,8 +182,14 @@ class NoteSplash extends FlxSprite
 
 	function addAnimAndCheck(name:String, anim:String, ?framerate:Int = 24, ?loop:Bool = false)
 	{
+		var animFrames = [];
+		@:privateAccess
+		animation.findByPrefix(animFrames, anim); // adds valid frames to animFrames
+
+		if(animFrames.length < 1) return false;
+	
 		animation.addByPrefix(name, anim, framerate, loop);
-		return animation.getByName(name) != null;
+		return true;
 	}
 
 	static var aliveTime:Float = 0;
